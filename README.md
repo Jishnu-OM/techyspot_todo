@@ -13,7 +13,7 @@ Use this email and password for quick try in app:-
 
 email: alex@techyspot.io
 
-password: password123.
+password: password123
 
 # Project Setup Instructions
 
