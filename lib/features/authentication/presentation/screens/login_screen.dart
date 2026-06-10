@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:techyspot_todo/core/constants/icon_constants.dart';
 import 'package:techyspot_todo/core/router/route_names.dart';
@@ -7,15 +10,16 @@ import 'package:techyspot_todo/core/widgets/buttons/google_signin_button.dart';
 import 'package:techyspot_todo/core/widgets/buttons/primary_button.dart';
 import 'package:techyspot_todo/core/widgets/inputs/auth_textfield.dart';
 import 'package:techyspot_todo/core/widgets/texts/normal_text.dart';
+import 'package:techyspot_todo/features/authentication/presentation/providers/auth_provider.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final emailController = TextEditingController();
@@ -93,7 +97,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     size: 22,
                     weight: FontWeight.w700,
                   ),
-                  // const SizedBox(height: 8),
                   NormalText(
                     text: 'Sign in to Continue',
                     size: 13,
@@ -113,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: passwordController,
                     obscureText: true,
                     keyboardType: TextInputType.emailAddress,
-                    validator: emailValidator,
+                    validator: passwordValidator,
                   ),
                   const SizedBox(height: 5),
                   Align(
@@ -129,9 +132,39 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 22),
-                  PrimaryButton(text: 'Sign in', onPressed: () {
-                    context.go(RouteNames.home);
-                  }),
+                  PrimaryButton(
+                    text: 'Sign in',
+                    onPressed: () async {
+                      log('email: ${emailController.text.trim()}');
+                      log('password: ${passwordController.text.trim()}');
+                      if (!_formKey.currentState!.validate()) {
+                        return;
+                      }
+                      await ref
+                          .read(authProvider.notifier)
+                          .login(
+                            email: emailController.text.trim(),
+                            password: passwordController.text.trim(),
+                          );
+                      final authState = ref.read(authProvider);
+                      if (!mounted) return;
+                      if (authState.isLoggedIn) {
+                        context.go(RouteNames.home);
+                        return;
+                      }
+                      if (authState.errorMessage != null) {
+                        log(authState.errorMessage!);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: NormalText(
+                              text:
+                                  'Wrong Email And Password, Please Try Again.',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
                   const SizedBox(height: 28),
                   Row(
                     children: [

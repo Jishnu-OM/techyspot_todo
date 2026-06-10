@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:techyspot_todo/core/constants/icon_constants.dart';
+import 'package:techyspot_todo/core/router/route_names.dart';
 import 'package:techyspot_todo/core/themes/app_colors.dart';
 import 'package:techyspot_todo/core/widgets/texts/normal_text.dart';
 import 'package:techyspot_todo/features/home/presentation/widgets/create_task_bottom_sheet.dart';
@@ -28,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.white,
             barrierColor: Colors.black.withOpacity(0.4),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -80,19 +82,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
                             const Spacer(),
 
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: const BoxDecoration(
-                                color: AppColors.borderColor,
-                                shape: BoxShape.circle,
-                              ),
-                              alignment: Alignment.center,
-                              child: const NormalText(
-                                text: 'AJ',
-                                size: 12,
-                                weight: FontWeight.w600,
-                                color: AppColors.darkGrey,
+                            GestureDetector(
+                              onTap: (){
+                                context.push(RouteNames.logout);
+                              },
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.borderColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: const NormalText(
+                                  text: 'AJ',
+                                  size: 12,
+                                  weight: FontWeight.w600,
+                                  color: AppColors.darkGrey,
+                                ),
                               ),
                             ),
                           ],
