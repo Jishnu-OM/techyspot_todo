@@ -5,5 +5,5 @@ class Env {
       dotenv.env['SUPABASE_URL'] ?? '';
 
   static String get publishableKey =>
-      dotenv.env['PUBLISHABLE_KEY'] ?? '';
+      dotenv.env['SUPABASE_PUBLISHABLE_KEY'] ?? '';
 }

@@ -182,7 +182,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ],
                   ),
                   const SizedBox(height: 28),
-                  GoogleSigninButton(onPressed: () {}),
+                  GoogleSigninButton(
+                    onPressed: () async {
+                      await ref.read(authProvider.notifier).googleLogin();
+                      final authState = ref.read(authProvider);
+
+                      if (authState.isLoggedIn) {
+                        context.go(RouteNames.home);
+                      }
+                    },
+                  ),
                   const SizedBox(height: 32),
                 ],
               ),

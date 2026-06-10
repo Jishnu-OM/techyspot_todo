@@ -14,4 +14,8 @@ class AuthRepositoryImpl extends AuthRepository {
   Future<void> logout() async {
     await remoteDS.logout();
   }
+  @override
+  Future<void>signInWithGoogle() async {
+    await remoteDS.signInWithGoogle();
+  } 
 }
