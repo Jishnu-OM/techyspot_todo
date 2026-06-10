@@ -1,3 +1,5 @@
+import 'package:techyspot_todo/features/home/data/models/task_model.dart';
+
 class TaskEntity {
   final String id;
   final String title;
@@ -16,4 +18,16 @@ class TaskEntity {
     this.endDate,
     this.createdAt,
   });
+
+  TaskModel toModel() {
+    return TaskModel(
+      id: id,
+      title: title,
+      description: description,
+      status: status,
+      startDate: startDate,
+      endDate: endDate,
+      createdAt: createdAt,
+    );
+  }
 }

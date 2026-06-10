@@ -12,6 +12,8 @@ class TaskCard extends StatelessWidget {
   final String dateRange;
   final String status;
   final bool completed;
+  final VoidCallback? onDelete;
+  final VoidCallback? onToggleComplete;
 
   const TaskCard({
     super.key,
@@ -20,6 +22,8 @@ class TaskCard extends StatelessWidget {
     required this.dateRange,
     required this.status,
     required this.completed,
+    this.onDelete,
+    this.onToggleComplete,
   });
 
   @override
@@ -34,19 +38,22 @@ class TaskCard extends StatelessWidget {
             color: Colors.black.withValues(alpha: 0.06),
             offset: Offset(0, 1),
             blurRadius: 3,
-          )
+          ),
         ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          completed
-              ? SvgPicture.asset(IconConstants.checked, width: 20, height: 21)
-              : SvgPicture.asset(
-                  IconConstants.notChecked,
-                  width: 20,
-                  height: 21,
-                ),
+          GestureDetector(
+            onTap: onToggleComplete,
+            child: completed
+                ? SvgPicture.asset(IconConstants.checked, width: 20, height: 21)
+                : SvgPicture.asset(
+                    IconConstants.notChecked,
+                    width: 20,
+                    height: 21,
+                  ),
+          ),
 
           const SizedBox(width: 12),
 
@@ -96,6 +103,14 @@ class TaskCard extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+          ),
+          GestureDetector(
+            onTap: onDelete,
+            child: const Icon(
+              Icons.delete_outline,
+              size: 18,
+              color: AppColors.darkGrey,
             ),
           ),
         ],

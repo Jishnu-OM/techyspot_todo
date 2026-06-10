@@ -1,28 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:techyspot_todo/core/constants/icon_constants.dart';
+import 'package:techyspot_todo/core/helpers/task_helper.dart';
 import 'package:techyspot_todo/core/router/route_names.dart';
 import 'package:techyspot_todo/core/themes/app_colors.dart';
 import 'package:techyspot_todo/core/widgets/texts/normal_text.dart';
+import 'package:techyspot_todo/features/home/presentation/providers/home_provider.dart';
 import 'package:techyspot_todo/features/home/presentation/widgets/create_task_bottom_sheet.dart';
+import 'package:techyspot_todo/features/home/presentation/widgets/delete_task_dialog.dart';
 
 import '../widgets/task_card.dart';
 import '../widgets/task_filter_chip.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int selectedFilter = 0;
 
   final filters = const ['All', 'To do', 'In progress', 'Done'];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(homeProvider.notifier).getTasks();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final homeState = ref.watch(homeProvider);
+
+    final dayName = TaskHelper.getDayName();
+
+    final filteredTasks = TaskHelper.filterTasks(
+      homeState.task,
+      selectedFilter,
+    );
+
+    final todayTasks = TaskHelper.getTodayTasks(filteredTasks);
+
+    final earlierTasks = TaskHelper.getEarlierTasks(filteredTasks);
+
+    final hasTasks = todayTasks.isNotEmpty || earlierTasks.isNotEmpty;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       floatingActionButton: GestureDetector(
@@ -36,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
             builder: (context) {
-              return const CreateTaskBottomSheet();
+              return CreateTaskBottomSheet();
             },
           );
         },
@@ -83,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             const Spacer(),
 
                             GestureDetector(
-                              onTap: (){
+                              onTap: () {
                                 context.push(RouteNames.logout);
                               },
                               child: Container(
@@ -94,8 +122,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   shape: BoxShape.circle,
                                 ),
                                 alignment: Alignment.center,
-                                child: const NormalText(
-                                  text: 'AJ',
+                                child: NormalText(
+                                  text: homeState.user == null
+                                      ? 'TS'
+                                      : homeState.user!
+                                            .substring(0, 2)
+                                            .toUpperCase(),
                                   size: 12,
                                   weight: FontWeight.w600,
                                   color: AppColors.darkGrey,
@@ -117,10 +149,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
 
-                        const Align(
+                        Align(
                           alignment: Alignment.centerLeft,
                           child: NormalText(
-                            text: 'Tuesday, 4 tasks remaining',
+                            text:
+                                '$dayName, ${homeState.task.length} tasks remaining', //'Tuesday, 4 tasks remaining'
                             size: 12,
                             weight: FontWeight.w400,
                             color: AppColors.grey,
@@ -166,68 +199,159 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  const NormalText(
-                    text: 'TODAY',
-                    size: 11,
-                    weight: FontWeight.w600,
-                    color: AppColors.grey,
-                  ),
+              child: homeState.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : homeState.task.isEmpty
+                  ? const Center(child: NormalText(text: 'No Tasks Found'))
+                  : !hasTasks
+                  ? const Center(child: NormalText(text: 'No Tasks Found'))
+                  : ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        if (todayTasks.isNotEmpty) ...[
+                          const NormalText(
+                            text: 'TODAY',
+                            size: 11,
+                            weight: FontWeight.w600,
+                            color: AppColors.grey,
+                          ),
 
-                  const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                  const TaskCard(
-                    title: 'Design system audit',
-                    description:
-                        'Review all components and flag inconsistencies across mobile screens.',
-                    dateRange: 'Jun 9 → Jun 12',
-                    status: 'In progress',
-                    completed: false,
-                  ),
+                          ...todayTasks.map(
+                            (task) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: GestureDetector(
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: AppColors.white,
+                                    barrierColor: Colors.black.withOpacity(0.4),
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(28),
+                                      ),
+                                    ),
+                                    builder: (_) {
+                                      return CreateTaskBottomSheet(
+                                        isEdit: true,
+                                        task: task,
+                                      );
+                                    },
+                                  );
+                                },
+                                child: TaskCard(
+                                  title: task.title,
+                                  description: task.description,
+                                  dateRange:
+                                      '${task.startDate != null ? DateFormat('MMM d').format(task.startDate!) : 'N/A'} → ${task.endDate != null ? DateFormat('MMM d').format(task.endDate!) : 'N/A'}',
+                                  status: task.status,
+                                  completed:
+                                      task.status.toLowerCase() == 'done',
+                                  onToggleComplete: () async {
+                                    await ref
+                                        .read(homeProvider.notifier)
+                                        .updateTaskStatus(task);
+                                  },
+                                  onDelete: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) {
+                                        return DeleteTaskDialog(
+                                          onConfirm: () async {
+                                            await ref
+                                                .read(homeProvider.notifier)
+                                                .deleteTask(task.id);
 
-                  const SizedBox(height: 12),
+                                            if (context.mounted) {
+                                              context.pop();
+                                            }
+                                          },
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
 
-                  const TaskCard(
-                    title: 'Write API docs',
-                    description: 'Document all endpoints for the v2 release.',
-                    dateRange: 'Jun 9 → Jun 14',
-                    status: 'To do',
-                    completed: false,
-                  ),
+                        if (earlierTasks.isNotEmpty) ...[
+                          const SizedBox(height: 24),
 
-                  const SizedBox(height: 24),
+                          const NormalText(
+                            text: 'EARLIER',
+                            size: 11,
+                            weight: FontWeight.w600,
+                            color: AppColors.grey,
+                          ),
 
-                  const NormalText(
-                    text: 'EARLIER',
-                    size: 11,
-                    weight: FontWeight.w600,
-                    color: AppColors.grey,
-                  ),
+                          const SizedBox(height: 16),
 
-                  const SizedBox(height: 16),
+                          ...earlierTasks.map(
+                            (task) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: GestureDetector(
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: AppColors.white,
+                                    barrierColor: Colors.black.withOpacity(0.4),
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(28),
+                                      ),
+                                    ),
+                                    builder: (_) {
+                                      return CreateTaskBottomSheet(
+                                        isEdit: true,
+                                        task: task,
+                                      );
+                                    },
+                                  );
+                                },
+                                child: TaskCard(
+                                  title: task.title,
+                                  description: task.description,
+                                  dateRange:
+                                      '${task.startDate != null ? DateFormat('MMM d').format(task.startDate!) : 'N/A'} → ${task.endDate != null ? DateFormat('MMM d').format(task.endDate!) : 'N/A'}',
+                                  status: task.status,
+                                  completed:
+                                      task.status.toLowerCase() == 'done',
+                                  onToggleComplete: () async {
+                                    await ref
+                                        .read(homeProvider.notifier)
+                                        .updateTaskStatus(task);
+                                  },
 
-                  const TaskCard(
-                    title: 'User interviews',
-                    description: 'Conducted 5 sessions with beta testers.',
-                    dateRange: 'Jun 2 → Jun 5',
-                    status: 'Done',
-                    completed: true,
-                  ),
+                                  onDelete: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) {
+                                        return DeleteTaskDialog(
+                                          onConfirm: () async {
+                                            await ref
+                                                .read(homeProvider.notifier)
+                                                .deleteTask(task.id);
 
-                  const SizedBox(height: 12),
-
-                  const TaskCard(
-                    title: 'Set up CI pipeline',
-                    description:
-                        'Configure GitHub Actions for automated testing and deployment.',
-                    dateRange: 'Jun 7 → Jun 10',
-                    status: 'To do',
-                    completed: false,
-                  ),
-                ],
-              ),
+                                            if (context.mounted) {
+                                              context.pop();
+                                            }
+                                          },
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
             ),
           ],
         ),
