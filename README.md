@@ -5,6 +5,9 @@
 TechySpot Todo is a Flutter-based task management application that allows users to manage their daily tasks efficiently. The application follows Clean Architecture principles, uses Riverpod for state management, GoRouter for navigation, and Supabase as the backend service for authentication and task management.
 
 ---
+## Note
+
+Click on the profile icon in home screen to go to logout screen.
 
 # Project Setup Instructions
 
