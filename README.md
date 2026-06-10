@@ -10,7 +10,9 @@ TechySpot Todo is a Flutter-based task management application that allows users 
 Click on the profile icon in home screen to go to logout screen.
 
 Use this email and password for quick try in app:-
+
 email: alex@techyspot.io
+
 password: password123.
 
 # Project Setup Instructions
